@@ -1,0 +1,74 @@
+!pip install phidata
+GROQ_API_KEY="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"
+PHI_API_KEY="phi-eJQcehbz49xj6c1SO8dOv236zO7pPjwiuvK2U67i160"
+import os
+os.environ["OPENAI_API_KEY"] = "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"  # Replace with your actual OpenAI API key
+!pip install duckduckgo_search
+!pip install --upgrade duckduckgo_search
+!pip install groq
+!pip install python-dotenv # Install the python-dotenv package
+import os
+from dotenv import load_dotenv
+import openai
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+!pip install phidata
+import os
+os.environ["GROQ_API_KEY"] = "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"
+#financial agent
+from phi.agent import Agent
+from phi.model.groq import Groq
+from phi.tools.yfinance import YFinanceTools
+from phi.tools.duckduckgo import DuckDuckGo
+
+##websearch agent
+
+websearch_agent = Agent(
+    name="websearch agent",
+    role="search the web for information",
+    model=Groq(id="llama-3.3-70b-versatile"),
+    tools=[DuckDuckGo()],
+    instructions=["always include sources"],
+    show_tools_calls=True,
+    markdown=True,
+)
+
+##financial agent
+
+finance_agent = Agent(
+    name="finance agent",
+    role="provide financial information",
+    model=Groq(id="llama-3.3-70b-versatile"),
+    tools=[YFinanceTools(stock_price=True, analyst_recommendations=True, stock_fundamentals=True,
+                         company_news=True),
+  ],
+  instructions=["use tables to display the data"],
+  show_tools_calls=True,
+  markdown=True,
+
+)
+
+multi_ai_agent=Agent(
+    team=[websearch_agent,finance_agent],
+    model=Groq(id="llama-3.3-70b-versatile"),
+    instructions=["always include sources","use tables to display the data","When asked to summarize news, focus on the main points and key events.",  # Add this line
+        "For TSLA news, search for recent articles and reports about the company." ],
+    show_tools_calls=True,
+    markdown=True,
+)
+multi_ai_agent.print_response("summarize analyst recommendation and share the latest news for TSLA",stream=True)
+
+
+result = multi_ai_agent.run(
+    """
+    Please provide a summary of analyst recommendations for TSLA.
+    Then, share the latest news for TSLA, focusing on the main points and key events.
+
+    Use the following tools:
+    - YFinanceTools for analyst recommendations
+    - DuckDuckGo for the latest news
+    """,
+    stream=False
+)
+print(result)
+!pip install fastapi
